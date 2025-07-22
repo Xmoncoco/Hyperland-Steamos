@@ -129,7 +129,7 @@ wait_for_wayland() {
             echo "Still waiting for Wayland socket... ($attempt/$max_attempts)"
         fi
         
-        sleep 0.5
+        sleep 0.1
         ((attempt++))
     done
     
@@ -259,7 +259,7 @@ window {
 EOSTYLE
 
 # Show session switcher with Wofi
-choice=$(printf "🎮 SteamOS\n🖥️ Desktop" | wofi --dmenu \
+choice=$(printf "🎮 SteamOS" | wofi --dmenu \
     --prompt "Switch Mode:" \
     --width 400 \
     --height 250 \
@@ -270,17 +270,6 @@ choice=$(printf "🎮 SteamOS\n🖥️ Desktop" | wofi --dmenu \
     --lines 2)
 
 case "$choice" in
-    "🖥️ Desktop")
-        # Validate we can write the session file
-        if echo "hyprland-uwsm.desktop" > "$HOME/.next-session" 2>/dev/null; then
-            notify-send "Session Switcher" "Switching to Desktop..." -t 2000
-            echo "Session file written successfully"
-        else
-            notify-send "Session Switcher" "Error: Failed to write session file" -t 3000
-            echo "Error: Cannot write to $HOME/.next-session"
-            exit 1
-        fi
-        ;;
     "🎮 SteamOS")
         # Validate we can write the session file
         if echo "gamescope-session-steam.desktop" > "$HOME/.next-session" 2>/dev/null; then
@@ -301,7 +290,7 @@ esac
 
 # Improved session cleanup with better reliability
 cleanup_session() {
-    local max_wait=10
+    local max_wait=5
     local wait_count=0
     
     # Detect current session more reliably
@@ -310,12 +299,12 @@ cleanup_session() {
         
         # Try graceful shutdown first
         systemctl --user stop gamescope-session-plus@steam 2>/dev/null || true
-        sleep 2
+        sleep 1
         
         # Force kill if still running
         if pgrep -x "gamescope" > /dev/null; then
             pkill -TERM gamescope
-            sleep 1
+            sleep 0.5
             pkill -KILL gamescope 2>/dev/null || true
         fi
         
@@ -336,7 +325,7 @@ cleanup_session() {
             pkill -TERM Hyprland 2>/dev/null || true
         fi
         
-        sleep 2
+        sleep 1
         
         # Force kill if still running
         if pgrep -x "Hyprland" > /dev/null; then
@@ -355,7 +344,7 @@ cleanup_session() {
         pkill -u $USER Hyprland 2>/dev/null || true
         pkill -u $USER gamescope 2>/dev/null || true
         systemctl --user stop gamescope-session-plus@steam 2>/dev/null || true
-        sleep 2
+        sleep 1
     fi
     
     # Clean up any remaining compositor processes
@@ -363,7 +352,7 @@ cleanup_session() {
     pkill -u $USER -f "steam" 2>/dev/null || true
     
     # Give time for cleanup
-    sleep 1
+    sleep 0.5
 }
 
 # Execute cleanup
@@ -398,25 +387,7 @@ EOF
 
 echo -e "${C_GREEN}Added SUPER+F12 keybinding to $HYPR_CONF${C_NC}"
 
-#=======================================================
-# STEP 8: ENSURE NOTIFICATION DAEMON
-#=======================================================
-echo -e "${C_BLUE}==> Ensuring notification support...${C_NC}"
 
-# Check if mako or dunst is installed, install mako if neither exists
-if ! command -v mako &> /dev/null && ! command -v dunst &> /dev/null; then
-    echo "Installing mako for notifications..."
-    sudo pacman -S mako --needed --noconfirm
-fi
-
-# Add notification daemon to Hyprland autostart if not present
-if ! grep -q "exec-once.*mako\|exec-once.*dunst" "$HYPR_CONF"; then
-    if command -v mako &> /dev/null; then
-        echo "exec-once = mako" >> "$HYPR_CONF"
-    elif command -v dunst &> /dev/null; then
-        echo "exec-once = dunst" >> "$HYPR_CONF"
-    fi
-fi
 
 #=======================================================
 # FINALIZATION
