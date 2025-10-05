@@ -67,8 +67,8 @@ yay -S gamescope-session-git uwsm-git gamescope-session-steam-git
 ### Quick Install
 ```bash
 # Clone the repository
-git clone https://github.com/Ripplingsnake12/hyprland-steamos.git
-cd hyprland-steamos
+git clone https://github.com/Ripplingsnake12/Hyperland-Steamos
+cd Hyperland-Steamos
 
 # Make installer executable
 chmod +x install.sh
